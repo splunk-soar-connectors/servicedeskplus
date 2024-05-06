@@ -8,6 +8,8 @@
 ServiceDesk Plus is an open-source ticketing system, and the actions performed by these API calls depend to
 some extent on the configuration of the ServiceDesk Plus instance.
 
+**This connector provides an integration with ServiceDesk Plus On-Premises ONLY**
+
 ### On Poll
 
 -   The `On Poll` action works in 2 steps: 
