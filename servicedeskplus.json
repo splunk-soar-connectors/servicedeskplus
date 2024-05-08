@@ -1,7 +1,7 @@
 {
     "appid": "474fe115-0cbc-4479-8d20-4870dd498cc3",
     "name": "ServiceDeskPlus",
-    "description": "This App supports a variety of ticket management actions on ManageEngine ServiceDesk Plus.",
+    "description": "This App supports a variety of ticket management actions on ManageEngine ServiceDesk Plus",
     "type": "ticketing",
     "product_vendor": "ManageEngine",
     "logo": "servicedeskplus.svg",
@@ -15,7 +15,7 @@
     "utctime_updated": "2024-01-25T10:00:07.352934Z",
     "package_name": "phantom_servicedeskplus",
     "main_module": "servicedeskplus_connector.py",
-    "min_phantom_version": "6.1.0.131",
+    "min_phantom_version": "6.1.1",
     "app_wizard_version": "1.0.0",
     "contributors": [
         {
@@ -64,7 +64,6 @@
             "action": "test connectivity",
             "identifier": "test_connectivity",
             "description": "Validate the asset configuration for connectivity using supplied configuration",
-            "verbose": "",
             "type": "test",
             "read_only": true,
             "parameters": {},
@@ -182,7 +181,6 @@
             "action": "create ticket",
             "identifier": "create_ticket",
             "description": "Create a ticket (request)",
-            "verbose": "",
             "type": "generic",
             "read_only": false,
             "parameters": {
@@ -265,7 +263,6 @@
             "action": "update ticket",
             "identifier": "update_ticket",
             "description": "Update ticket (request)",
-            "verbose": "",
             "type": "generic",
             "read_only": false,
             "parameters": {
@@ -376,7 +373,6 @@
             "action": "get ticket resolution",
             "identifier": "get_ticket_resolution",
             "description": "Get a resolution of the ticket (request)",
-            "verbose": "",
             "type": "investigate",
             "read_only": true,
             "parameters": {
@@ -482,7 +478,6 @@
             "action": "set ticket resolution",
             "identifier": "set_ticket_resolution",
             "description": "Add/Update a resolution of the ticket (request)",
-            "verbose": "",
             "type": "generic",
             "read_only": false,
             "parameters": {
@@ -580,7 +575,6 @@
             "action": "list linked tickets",
             "identifier": "list_linked_tickets",
             "description": "Get all linked tickets under a ticket (request)",
-            "verbose": "",
             "type": "investigate",
             "read_only": true,
             "parameters": {
@@ -667,7 +661,6 @@
             "action": "assign ticket",
             "identifier": "assign_ticket",
             "description": "Assign a ticket (request)",
-            "verbose": "",
             "type": "generic",
             "read_only": false,
             "parameters": {
@@ -754,7 +747,6 @@
             "action": "close ticket",
             "identifier": "close_ticket",
             "description": "Close a ticket (request)",
-            "verbose": "",
             "type": "generic",
             "read_only": false,
             "parameters": {
@@ -889,7 +881,6 @@
         {
             "action": "list tickets",
             "description": "List tickets present in ServiceDesk Plus",
-            "verbose": "",
             "type": "investigate",
             "identifier": "list_tickets",
             "read_only": true,

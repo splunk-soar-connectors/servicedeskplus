@@ -74,17 +74,17 @@ class ServicedeskplusConnector(BaseConnector):
                     error_code = e.args[0]
                     error_msg = e.args[1]
                 elif len(e.args) == 1:
-                    error_code = ERR_CODE_MSG
+                    error_code = ERR_CODE
                     error_msg = e.args[0]
             else:
-                error_code = ERR_CODE_MSG
+                error_code = ERR_CODE
                 error_msg = ERR_MSG_UNAVAILABLE
         except:
-            error_code = ERR_CODE_MSG
+            error_code = ERR_CODE
             error_msg = ERR_MSG_UNAVAILABLE
 
         try:
-            if error_code in ERR_CODE_MSG:
+            if error_code in ERR_CODE:
                 error_text = "Error Message: {0}".format(error_msg)
             else:
                 error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
@@ -323,7 +323,7 @@ class ServicedeskplusConnector(BaseConnector):
                 return
 
             return container_id
-    
+
     def _update_ticket_container(self, container_id, ticket):
         """Update an existing SOAR container with new ticket information"""
 
@@ -335,7 +335,7 @@ class ServicedeskplusConnector(BaseConnector):
         except Exception as e:
             err = self._get_error_message_from_exception(e)
             self.debug_print(f"Error while updating the container: {err}")
-    
+
     def _create_ticket_artifacts(self, ticket, container_id):
         """Creates artifacts for a given container based on ticket information"""
         artifacts = []
@@ -490,7 +490,6 @@ class ServicedeskplusConnector(BaseConnector):
 
         return phantom.APP_SUCCESS, results_list
 
-
     def _retrieve_tickets(self, action_result, since, limit):
         """Retrieves tickets from ServiceDeskPlus that recently have been updated"""
         time_from = since.strftime('%s')
@@ -499,7 +498,7 @@ class ServicedeskplusConnector(BaseConnector):
                 'field': 'last_updated_time',
                 'value': f'{time_from}',
                 'condition': 'gte'
-            },{
+            }, {
                 "field": "created_time",
                 "condition": "gte",
                 "value": f"{time_from}",
@@ -602,7 +601,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         # Add the response into the data section
         action_result.add_data(response['request'])
-        summary = action_result.set_summary({})
+        action_result.set_summary({})
 
         return action_result.set_status(phantom.APP_SUCCESS, "Successfully updated ticket")
 
@@ -743,7 +742,7 @@ class ServicedeskplusConnector(BaseConnector):
         response_status = response['response_status']
         # Add the response into the data section
         action_result.add_data(response_status)
-        summary = action_result.set_summary({})
+        action_result.set_summary({})
 
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
@@ -778,7 +777,8 @@ class ServicedeskplusConnector(BaseConnector):
         summary = action_result.set_summary({})
         summary['num_linked_tickets'] = len(response['link_requests'])
 
-        return action_result.set_status(phantom.APP_SUCCESS, f"Successfully fetched [{summary['num_linked_tickets']}] tickets linked to ticket [{request_id}]")
+        return action_result.set_status(phantom.APP_SUCCESS, 
+                                        f"Successfully fetched [{summary['num_linked_tickets']}] tickets linked to ticket [{request_id}]")
 
     def _handle_get_ticket_resolution(self, param):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
@@ -802,7 +802,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         self.save_progress("Successfully received a response from server")
 
-        summary = action_result.set_summary({})
+        action_result.set_summary({})
 
         return action_result.set_status(phantom.APP_SUCCESS, f"Successfully fetched resolution for ticket [{request_id}]")
 
@@ -837,7 +837,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         self.save_progress("Successfully received a response from server")
 
-        summary = action_result.set_summary({})
+        action_result.set_summary({})
 
         return action_result.set_status(phantom.APP_SUCCESS, f"Successfully added a resolution for ticket [{request_id}]")
 
@@ -984,16 +984,16 @@ class ServicedeskplusConnector(BaseConnector):
         # Optional values should use the .get() function
         optional_config_name = config.get('optional_config_name')
         """
-    
+
         self._base_url = config.get('base_url')
 
         data_centre = config.get('data_centre')
         if data_centre == "On-Premises":
             self._onprem = True
-            
+
             if not self._base_url:
                 return self.set_status(phantom.APP_ERROR, SDP_ERR_INVALID_CONFIGURATION)
-            
+
             if self._base_url.endswith('/'):
                 self._base_url = self._base_url[:-1]
 
