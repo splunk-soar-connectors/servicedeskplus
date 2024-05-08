@@ -13,7 +13,7 @@ from phantom.base_connector import BaseConnector
 from phantom.action_result import ActionResult
 
 # Usage of the consts file is recommended
-from servicedeskplus_consts import *
+import servicedeskplus_consts as consts
 import requests
 import json
 import ast
@@ -63,34 +63,31 @@ class ServicedeskplusConnector(BaseConnector):
             self.API_CLOSE_ENDPOINT = "_close"
 
     def _get_error_message_from_exception(self, e):
-        """ This method is used to get appropriate error message from the exception.
+        """
+        Get appropriate error message from the exception.
+
         :param e: Exception object
         :return: error message
         """
+        error_code = None
+        error_message = consts.ERR_MSG_UNAVAILABLE
+
+        self.error_print("Error occurred:", e)
 
         try:
-            if e.args:
+            if hasattr(e, "args"):
                 if len(e.args) > 1:
                     error_code = e.args[0]
-                    error_msg = e.args[1]
+                    error_message = e.args[1]
                 elif len(e.args) == 1:
-                    error_code = ERR_CODE
-                    error_msg = e.args[0]
-            else:
-                error_code = ERR_CODE
-                error_msg = ERR_MSG_UNAVAILABLE
-        except:
-            error_code = ERR_CODE
-            error_msg = ERR_MSG_UNAVAILABLE
+                    error_message = e.args[0]
+        except Exception:
+            pass
 
-        try:
-            if error_code in ERR_CODE:
-                error_text = "Error Message: {0}".format(error_msg)
-            else:
-                error_text = "Error Code: {0}. Error Message: {1}".format(error_code, error_msg)
-        except:
-            self.debug_print(PARSE_ERR_MSG)
-            error_text = PARSE_ERR_MSG
+        if not error_code:
+            error_text = "Error Message: {}".format(error_message)
+        else:
+            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_message)
 
         return error_text
 
@@ -107,16 +104,16 @@ class ServicedeskplusConnector(BaseConnector):
         if parameter is not None:
             try:
                 if not float(parameter).is_integer():
-                    return action_result.set_status(phantom.APP_ERROR, SDP_VALID_INT_MSG.format(param=key)), None
+                    return action_result.set_status(phantom.APP_ERROR, consts.SDP_VALID_INT_MSG.format(param=key)), None
 
                 parameter = int(parameter)
             except:
-                return action_result.set_status(phantom.APP_ERROR, SDP_VALID_INT_MSG.format(param=key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.SDP_VALID_INT_MSG.format(param=key)), None
 
             if parameter < 0:
-                return action_result.set_status(phantom.APP_ERROR, SDP_NON_NEG_INT_MSG.format(param=key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.SDP_NON_NEG_INT_MSG.format(param=key)), None
             if not allow_zero and parameter == 0:
-                return action_result.set_status(phantom.APP_ERROR, SDP_NON_NEG_NON_ZERO_INT_MSG.format(param=key)), None
+                return action_result.set_status(phantom.APP_ERROR, consts.SDP_NON_NEG_NON_ZERO_INT_MSG.format(param=key)), None
 
         return phantom.APP_SUCCESS, parameter
 
@@ -262,12 +259,12 @@ class ServicedeskplusConnector(BaseConnector):
 
     def get_query_params(self, param):
         request_fields = {}
-        for field in REQUEST_FIELDS:
+        for field in consts.REQUEST_FIELDS:
             value = param.get(field, None)
             if value:
                 if field in ['udf_fields', 'template']:
                     request_fields[field] = f"{self.format_params(field, value)}"
-                elif field not in FIELDS_WITH_NAME or (value[0] == '{' and value[-1] == '}'):
+                elif field not in consts.FIELDS_WITH_NAME or (value[0] == '{' and value[-1] == '}'):
                     request_fields[field] = value
                 else:
                     request_fields[field] = {
@@ -297,7 +294,7 @@ class ServicedeskplusConnector(BaseConnector):
     def _search_ticket_container(self, ticket):
         "Find the SOAR container corresponding to the servicedeskplus ticket"
 
-        ticket_id = ticket[SDP_TICKET_JSON_ID]
+        ticket_id = ticket[consts.SDP_TICKET_JSON_ID]
 
         url = '{0}rest/container?_filter_source_data_identifier="{1}"&_filter_asset={2}'.format(
             self.get_phantom_base_url(), ticket_id, self.get_asset_id()
@@ -348,15 +345,15 @@ class ServicedeskplusConnector(BaseConnector):
         ticket_artifact = {
             "container_id": container_id,
             "name": "ticket Artifact",
-            "label": SDP_TICKET_ARTIFACT_LABEL,
-            "source_data_identifier": ticket[SDP_TICKET_JSON_ID],
+            "label": consts.SDP_TICKET_ARTIFACT_LABEL,
+            "source_data_identifier": ticket[consts.SDP_TICKET_JSON_ID],
         }
 
         cef = ticket
         # NOTE Eventually refactor ticket JSON structure to have it cleaner
         for field in list(ticket):
             if isinstance(ticket[field], dict):
-                if field in FIELDS_WITH_NAME:
+                if field in consts.FIELDS_WITH_NAME:
                     # self.save_progress(f"{ticket[field]}")
                     if ticket[field] is not None:
                         cef[field] = ticket[field]['name']
@@ -370,7 +367,7 @@ class ServicedeskplusConnector(BaseConnector):
     def _gen_ticket_container_title(self, ticket):
         """Generate title for the new SOAR container based on ticket information"""
 
-        primary = ticket[SDP_TICKET_JSON_ID]
+        primary = ticket[consts.SDP_TICKET_JSON_ID]
         secondary = ticket.get("subject")
         return "{} - {}".format(primary, secondary)
 
@@ -379,7 +376,7 @@ class ServicedeskplusConnector(BaseConnector):
         ticket_container = {
             "name": self._gen_ticket_container_title(ticket),
             "label": self.get_config().get("ingest", {}).get("container_label"),
-            "source_data_identifier": ticket[SDP_TICKET_JSON_ID],
+            "source_data_identifier": ticket[consts.SDP_TICKET_JSON_ID],
             "description": ticket["short_description"] if 'short_description' in ticket else ticket['description'],
             "data": json.dumps(ticket)
         }
@@ -434,7 +431,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         # make rest call
         ret_val, response = self._make_rest_call(
-            API_GET_REQUESTS, action_result, params=params
+            consts.API_GET_REQUESTS, action_result, params=params
         )
 
         if phantom.is_fail(ret_val) or "requests" not in response:
@@ -442,9 +439,9 @@ class ServicedeskplusConnector(BaseConnector):
             # for now the return is commented out, but after implementation, return from here
             action_result_message = action_result.get_message()
             if action_result_message:
-                message = f"{SDP_ERR_RETRIEVE_TICKETS}. {action_result_message}"
+                message = f"{consts.SDP_ERR_RETRIEVE_TICKETS}. {action_result_message}"
             else:
-                message = SDP_ERR_RETRIEVE_TICKETS
+                message = consts.SDP_ERR_RETRIEVE_TICKETS
             return RetVal(
                 action_result.set_status(phantom.APP_ERROR, message),
                 response
@@ -458,7 +455,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         while True:
             if next_index > 1:
-                list_info[SDP_JSON_LIST_INFO]["start_index"] = next_index
+                list_info[consts.SDP_JSON_LIST_INFO]["start_index"] = next_index
 
             params = {
                 'input_data': f"{list_info}"
@@ -471,8 +468,8 @@ class ServicedeskplusConnector(BaseConnector):
             if phantom.is_fail(ret_val):
                 return action_result.get_status(), res_json
 
-            if SDP_JSON_LIST_INFO not in res_json:
-                raise Exception(SDP_ERR_NO_VALUE.format(value=SDP_JSON_LIST_INFO))
+            if consts.SDP_JSON_LIST_INFO not in res_json:
+                raise Exception(consts.SDP_ERR_NO_VALUE.format(value=consts.SDP_JSON_LIST_INFO))
 
             for entry in res_json["requests"]:
                 results_list.append(entry)
@@ -482,11 +479,11 @@ class ServicedeskplusConnector(BaseConnector):
                     results_list = results_list[:limit]
                 break
 
-            if not res_json[SDP_JSON_LIST_INFO].get("has_more_rows"):
+            if not res_json[consts.SDP_JSON_LIST_INFO].get("has_more_rows"):
                 # No more rows left
                 break
 
-            next_index += res_json[SDP_JSON_LIST_INFO]["row_count"]
+            next_index += res_json[consts.SDP_JSON_LIST_INFO]["row_count"]
 
         return phantom.APP_SUCCESS, results_list
 
@@ -516,7 +513,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         # make rest call
         ret_val, requests = self._make_paginated_call(
-            API_GET_REQUESTS, action_result, list_info, limit
+            consts.API_GET_REQUESTS, action_result, list_info, limit
         )
 
         if phantom.is_fail(ret_val):
@@ -524,9 +521,9 @@ class ServicedeskplusConnector(BaseConnector):
             # for now the return is commented out, but after implementation, return from here
             action_result_message = action_result.get_message()
             if action_result_message:
-                message = f"{SDP_ERR_RETRIEVE_TICKETS}. {action_result_message}"
+                message = f"{consts.SDP_ERR_RETRIEVE_TICKETS}. {action_result_message}"
             else:
-                message = SDP_ERR_RETRIEVE_TICKETS
+                message = consts.SDP_ERR_RETRIEVE_TICKETS
             return RetVal(
                 action_result.set_status(phantom.APP_ERROR, message),
                 requests
@@ -550,7 +547,7 @@ class ServicedeskplusConnector(BaseConnector):
         try:
             # make rest call
             ret_val, requests = self._make_paginated_call(
-                API_GET_REQUESTS, action_result, list_info
+                consts.API_GET_REQUESTS, action_result, list_info
             )
             if phantom.is_fail(ret_val):
                 # the call to the 3rd party device or service failed, action result should contain all the error details
@@ -559,9 +556,9 @@ class ServicedeskplusConnector(BaseConnector):
                 return action_result.get_status()
         except Exception as e:
             error_msg = self._get_error_message_from_exception(e)
-            self.debug_print(SDP_ERR_FETCHING_TICKETS.format(error=error_msg))
+            self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=error_msg))
             return action_result.set_status(
-                phantom.APP_ERROR, SDP_ERR_FETCHING_TICKETS.format(error=error_msg)
+                phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_msg)
             )
 
         self.save_progress("Successfully received a response from server")
@@ -588,7 +585,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         # make rest call
         ret_val, response = self._make_rest_call(
-            f"{API_GET_REQUESTS}/{request_id}", action_result, data=data, method="put"
+            f"{consts.API_GET_REQUESTS}/{request_id}", action_result, data=data, method="put"
         )
 
         if phantom.is_fail(ret_val):
@@ -618,7 +615,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         # make rest call
         ret_val, response = self._make_rest_call(
-            API_GET_REQUESTS, action_result, data=data, method="post"
+            consts.API_GET_REQUESTS, action_result, data=data, method="post"
         )
 
         # Add the response into the data section
@@ -647,7 +644,7 @@ class ServicedeskplusConnector(BaseConnector):
         request_id = param.get('request_id')
 
         # NOTE URL changes for Cloud data centres
-        url = f"{API_GET_REQUESTS}/{request_id}{self.API_DELETE_ENDPOINT}"
+        url = f"{consts.API_GET_REQUESTS}/{request_id}{self.API_DELETE_ENDPOINT}"
 
         # make rest call
         ret_val, response = self._make_rest_call(
@@ -665,7 +662,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         self.save_progress("Successfully received a response from server")
 
-        summary = action_result.set_summary({})
+        action_result.set_summary({})
 
         return action_result.set_status(phantom.APP_SUCCESS, "Successfully deleted ticket")
 
@@ -677,7 +674,7 @@ class ServicedeskplusConnector(BaseConnector):
         request_fields = json.loads(param['fields'])
 
         # NOTE URL changes for Cloud data centres
-        url = f"{API_GET_REQUESTS}/{request_id}/{self.API_ASSIGN_ENDPOINT}"
+        url = f"{consts.API_GET_REQUESTS}/{request_id}/{self.API_ASSIGN_ENDPOINT}"
 
         query = self.get_query_params(request_fields)
         data = {
@@ -692,7 +689,7 @@ class ServicedeskplusConnector(BaseConnector):
         response_status = response['response_status']
         # Add the response into the data section
         action_result.add_data(response_status)
-        summary = action_result.set_summary({})
+        action_result.set_summary({})
 
         if phantom.is_fail(ret_val):
             message = response_status["messages"][0]
@@ -726,7 +723,7 @@ class ServicedeskplusConnector(BaseConnector):
             }
 
         # NOTE URL changes for Cloud data centres
-        url = f"{API_GET_REQUESTS}/{request_id}/{self.API_CLOSE_ENDPOINT}"
+        url = f"{consts.API_GET_REQUESTS}/{request_id}/{self.API_CLOSE_ENDPOINT}"
 
         data = {
             "input_data": f"{input_data}"
@@ -760,7 +757,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         # make rest call
         ret_val, response = self._make_rest_call(
-            f"{API_GET_REQUESTS}/{request_id}/link_requests", action_result
+            f"{consts.API_GET_REQUESTS}/{request_id}/link_requests", action_result
         )
 
         # Add the response into the data section
@@ -777,7 +774,7 @@ class ServicedeskplusConnector(BaseConnector):
         summary = action_result.set_summary({})
         summary['num_linked_tickets'] = len(response['link_requests'])
 
-        return action_result.set_status(phantom.APP_SUCCESS, 
+        return action_result.set_status(phantom.APP_SUCCESS,
                                         f"Successfully fetched [{summary['num_linked_tickets']}] tickets linked to ticket [{request_id}]")
 
     def _handle_get_ticket_resolution(self, param):
@@ -788,7 +785,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         # make rest call
         ret_val, response = self._make_rest_call(
-            f"{API_GET_REQUESTS}/{request_id}/resolutions", action_result
+            f"{consts.API_GET_REQUESTS}/{request_id}/resolutions", action_result
         )
 
         # Add the response into the data section
@@ -823,7 +820,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         # make rest call
         ret_val, response = self._make_rest_call(
-            f"{API_GET_REQUESTS}/{request_id}/resolutions", action_result, method="post", data=data
+            f"{consts.API_GET_REQUESTS}/{request_id}/resolutions", action_result, method="post", data=data
         )
 
         # Add the response into the data section
@@ -853,7 +850,7 @@ class ServicedeskplusConnector(BaseConnector):
         self.save_progress("Connecting to endpoint")
         # make rest call
         ret_val, response = self._make_rest_call(
-            API_GET_REQUESTS, action_result, params=None
+            consts.API_GET_REQUESTS, action_result, params=None
         )
 
         if phantom.is_fail(ret_val):
@@ -876,7 +873,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         last_run = self._state.get("last_run")
         max_tickets = 100
-        backfill = datetime.now() - timedelta(SDP_BACKFILL_DAYS)
+        backfill = datetime.now() - timedelta(consts.SDP_BACKFILL_DAYS)
 
         if self.is_poll_now():
             self.debug_print("Run Mode: Poll Now")
@@ -884,7 +881,7 @@ class ServicedeskplusConnector(BaseConnector):
 
             # Integer validation for 'maximum containers' configuration parameter
             max_tickets = param[phantom.APP_JSON_CONTAINER_COUNT]
-            ret_val, max_tickets = self._validate_integer(action_result, max_tickets, SDP_CONTAINER_COUNT_KEY)
+            ret_val, max_tickets = self._validate_integer(action_result, max_tickets, consts.SDP_CONTAINER_COUNT_KEY)
             if phantom.is_fail(ret_val):
                 return action_result.get_status()
             last_run = backfill
@@ -905,13 +902,13 @@ class ServicedeskplusConnector(BaseConnector):
                 action_result, last_run, max_tickets
             )
             if phantom.is_fail(ret_val):
-                self.debug_print(SDP_ERR_FETCHING_TICKETS.format(error=action_result.get_message()))
+                self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=action_result.get_message()))
                 return action_result.get_status()
         except Exception as e:
             error_msg = self._get_error_message_from_exception(e)
-            self.debug_print(SDP_ERR_FETCHING_TICKETS.format(error=error_msg))
+            self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=error_msg))
             return action_result.set_status(
-                phantom.APP_ERROR, SDP_ERR_FETCHING_TICKETS.format(error=error_msg)
+                phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_msg)
             )
 
         self.debug_print(f"Total tickets fetched: {len(tickets)}")
@@ -928,7 +925,7 @@ class ServicedeskplusConnector(BaseConnector):
             except Exception as e:
                 error_msg = self._get_error_message_from_exception(e)
                 return action_result.set_status(
-                    phantom.APP_ERROR, SDP_ERR_FETCHING_TICKET.format(error=error_msg, ticket_id=ticket["id"])
+                    phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKET.format(error=error_msg, ticket_id=ticket["id"])
                 )
             ticket["last_updated_time"] = last_updated_on[0]["last_updated_time"]
             self._save_ticket_container(action_result, ticket)
@@ -992,15 +989,15 @@ class ServicedeskplusConnector(BaseConnector):
             self._onprem = True
 
             if not self._base_url:
-                return self.set_status(phantom.APP_ERROR, SDP_ERR_INVALID_CONFIGURATION)
+                return self.set_status(phantom.APP_ERROR, consts.SDP_ERR_INVALID_CONFIGURATION)
 
             if self._base_url.endswith('/'):
                 self._base_url = self._base_url[:-1]
 
         else:
-            return self.set_status(phantom.APP_ERROR, SDP_ERR_NOT_IMPLEMENTED)
-            # self._base_url = SDP_DATA_CENTERS[data_centre]['base_url']
-            # self._account_url = SDP_DATA_CENTERS[data_centre]['oauth']
+            return self.set_status(phantom.APP_ERROR, consts.SDP_ERR_NOT_IMPLEMENTED)
+            # self._base_url = consts.SDP_DATA_CENTERS[data_centre]['base_url']
+            # self._account_url = consts.SDP_DATA_CENTERS[data_centre]['oauth']
 
         # Configuring API Endpoints
         self._set_apis()
