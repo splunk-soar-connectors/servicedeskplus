@@ -111,7 +111,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         return RetVal(
             action_result.set_status(
-                phantom.APP_ERROR, "Empty response and no information in the header"
+                phantom.APP_ERROR, consts.SDP_ERR_EMPTY_RESPONSE.format(code=response.status_code)
             ), None
         )
 
@@ -125,8 +125,9 @@ class ServicedeskplusConnector(BaseConnector):
             split_lines = error_text.split('\n')
             split_lines = [x.strip() for x in split_lines if x.strip()]
             error_text = '\n'.join(split_lines)
-        except:
-            error_text = "Cannot parse error details"
+        except Exception as e:
+            error_message = self._get_error_message_from_exception(e)
+            error_text = consts.SDP_ERR_UNABLE_TO_PARSE_HTML_RESPONSE.format(error=error_message)
 
         message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code, error_text)
 
@@ -134,13 +135,15 @@ class ServicedeskplusConnector(BaseConnector):
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _process_json_response(self, r, action_result):
+        status_code = r.status_code
         # Try a json parse
         try:
             resp_json = r.json()
         except Exception as e:
+            error_message = self._get_error_message_from_exception(e)
             return RetVal(
                 action_result.set_status(
-                    phantom.APP_ERROR, "Unable to parse JSON response. Error: {0}".format(str(e))
+                    phantom.APP_ERROR, consts.SDP_ERR_UNABLE_TO_PARSE_JSON_RESPONSE.format(error=error_message)
                 ), None
             )
 
@@ -216,9 +219,11 @@ class ServicedeskplusConnector(BaseConnector):
                 **kwargs
             )
         except Exception as e:
+            error_text = consts.SDP_EXCEPTION_ERR_MESSAGE.format(msg=consts.SDP_ERR_CONNECTIVITY_FAILED,
+                error_text=self._get_error_message_from_exception(e))
             return RetVal(
                 action_result.set_status(
-                    phantom.APP_ERROR, "Error Connecting to server. Details: {0}".format(str(e))
+                    phantom.APP_ERROR, error_text
                 ), resp_json
             )
 
@@ -242,8 +247,7 @@ class ServicedeskplusConnector(BaseConnector):
                         raise Exception('Invalid input')
             return rval_dict
         except Exception:
-            raise Exception(f'Illegal {name} format. Input format should be a string of key and value separated by : '
-                            'Multiple key;value pairs can be given, separated with a comma')
+            raise Exception(consts.SDP_ERR_ILLEGAL_FORMAT.format(name=name))
 
     def get_query_params(self, param):
         request_fields = {}
@@ -292,19 +296,19 @@ class ServicedeskplusConnector(BaseConnector):
             resp_json = r.json()
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
-            self.debug_print(f"Unable to query SOAR for containers: {error_message}")
+            self.debug_print(consts.SDP_ERR_CONTAINERS_UNABLE.format(error={error_message}))
             return
 
         if resp_json.get("count", 0) <= 0:
-            self.debug_print("No container matched")
+            self.debug_print(consts.SDP_ERR_NO_CONTAINERS)
             return
         else:
             try:
                 container_id = resp_json.get("data", [])[0]["id"]
-                self.debug_print(f"Found container id: {container_id}")
+                self.debug_print(consts.SDP_CONTAINER_FOUND_MSG.format(cid=container_id))
             except Exception as e:
                 error_message = self._get_error_message_from_exception(e)
-                self.debug_print(f"Container results are not proper: {error_message}")
+                self.debug_print(consts.SDP_ERR_CONTAINER_WRONG.format(error=error_message))
                 return
 
             return container_id
@@ -318,8 +322,8 @@ class ServicedeskplusConnector(BaseConnector):
         try:
             requests.post(url, data=(json.dumps(updated_container)), verify=False)
         except Exception as e:
-            err = self._get_error_message_from_exception(e)
-            self.debug_print(f"Error while updating the container: {err}")
+            error_message = self._get_error_message_from_exception(e)
+            self.debug_print(consts.SDP_ERR_CONTAINER_UPDATE.format(err=error_message))
 
     def _create_ticket_artifacts(self, ticket, container_id):
         """Creates artifacts for a given container based on ticket information"""
@@ -379,7 +383,7 @@ class ServicedeskplusConnector(BaseConnector):
         container_id = self._search_ticket_container(ticket)
 
         if container_id:
-            self.debug_print("Updating existing ticket container")
+            self.debug_print(consts.SDP_CONTAINER_UPDATE_MSG)
             ret_val = self._update_ticket_container(container_id, ticket)
             ticket_artifacts = self._create_ticket_artifacts(ticket, container_id)
             self.save_artifacts(ticket_artifacts)
@@ -388,7 +392,7 @@ class ServicedeskplusConnector(BaseConnector):
         ret_val, message, container_id = self.save_container(ticket_container)
 
         if not ret_val:
-            self.debug_print("Could not save new ticket container")
+            self.debug_print(consts.SDP_ERR_CONTAINER_FAILURE)
             return RetVal(phantom.APP_ERROR)
         else:
             ticket_artifacts = self._create_ticket_artifacts(ticket, container_id)
@@ -517,7 +521,7 @@ class ServicedeskplusConnector(BaseConnector):
                 requests
             )
 
-        self.save_progress("Successfully received a response from server")
+        self.save_progress(consts.SDP_SUCCESS_MSG)
 
         return ret_val, requests
 
@@ -549,7 +553,7 @@ class ServicedeskplusConnector(BaseConnector):
                 phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message)
             )
 
-        self.save_progress("Successfully received a response from server")
+        self.save_progress(consts.SDP_SUCCESS_MSG)
 
         for request in requests:
             action_result.add_data(request)
@@ -582,13 +586,13 @@ class ServicedeskplusConnector(BaseConnector):
             self.save_progress("Error {}".format(action_result.get_message()))
             return action_result.get_status()
 
-        self.save_progress("Successfully received a response from server")
+        self.save_progress(consts.SDP_SUCCESS_MSG)
 
         # Add the response into the data section
         action_result.add_data(response['request'])
         action_result.set_summary({})
 
-        return action_result.set_status(phantom.APP_SUCCESS, "Successfully updated ticket")
+        return action_result.set_status(phantom.APP_SUCCESS, consts.SDP_SUCCESS_UPDATE_MSG)
 
     def _handle_create_ticket(self, param):
         self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
@@ -615,7 +619,7 @@ class ServicedeskplusConnector(BaseConnector):
             self.save_progress("Error {}".format(action_result.get_message()))
             return action_result.get_status()
 
-        self.save_progress("Successfully received a response from server")
+        self.save_progress(consts.SDP_SUCCESS_MSG)
 
         request_id = response['request']['id']
         self.save_progress(f"Created request with id {request_id}")
@@ -649,7 +653,7 @@ class ServicedeskplusConnector(BaseConnector):
             self.save_progress("Error {}".format(action_result.get_message()))
             return action_result.get_status()
 
-        self.save_progress("Successfully received a response from server")
+        self.save_progress(consts.SDP_SUCCESS_MSG)
 
         action_result.set_summary({})
 
@@ -760,7 +764,7 @@ class ServicedeskplusConnector(BaseConnector):
             self.save_progress("Error {}".format(action_result.get_message()))
             return action_result.get_status()
 
-        self.save_progress("Successfully received a response from server")
+        self.save_progress(consts.SDP_SUCCESS_MSG)
 
         summary = action_result.set_summary({})
         summary['num_linked_tickets'] = len(response['link_requests'])
@@ -788,7 +792,7 @@ class ServicedeskplusConnector(BaseConnector):
             self.save_progress("Error {}".format(action_result.get_message()))
             return action_result.get_status()
 
-        self.save_progress("Successfully received a response from server")
+        self.save_progress(consts.SDP_SUCCESS_MSG)
 
         action_result.set_summary({})
 
@@ -823,7 +827,7 @@ class ServicedeskplusConnector(BaseConnector):
             self.save_progress("Error {}".format(action_result.get_message()))
             return action_result.get_status()
 
-        self.save_progress("Successfully received a response from server")
+        self.save_progress(consts.SDP_SUCCESS_MSG)
 
         action_result.set_summary({})
 
