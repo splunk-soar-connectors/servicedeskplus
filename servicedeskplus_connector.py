@@ -148,12 +148,12 @@ class ServicedeskplusConnector(BaseConnector):
             )
 
         # Please specify the status codes here
-        if 200 <= r.status_code < 399:
+        if 200 <= status_code < 399:
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         # You should process the error returned in the json
         message = "Error from server. Status Code: {0} Data from server: {1}".format(
-            r.status_code,
+            status_code,
             r.text.replace(u'{', '{{').replace(u'}', '}}')
         )
 
@@ -219,8 +219,8 @@ class ServicedeskplusConnector(BaseConnector):
                 **kwargs
             )
         except Exception as e:
-            error_text = consts.SDP_EXCEPTION_ERR_MESSAGE.format(msg=consts.SDP_ERR_CONNECTIVITY_FAILED,
-                error_text=self._get_error_message_from_exception(e))
+            error_text = consts.SDP_EXCEPTION_ERR_MSG.format(msg=consts.SDP_ERR_CONNECTIVITY_FAILURE,
+                error=self._get_error_message_from_exception(e))
             return RetVal(
                 action_result.set_status(
                     phantom.APP_ERROR, error_text
