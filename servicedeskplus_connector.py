@@ -7,19 +7,20 @@
 # Python 3 Compatibility imports
 from __future__ import print_function, unicode_literals
 
+import ast
+import json
+from datetime import datetime, timedelta
+
+import dateutil.parser
 # Phantom App imports
 import phantom.app as phantom
-from phantom.base_connector import BaseConnector
+import requests
+from bs4 import BeautifulSoup
 from phantom.action_result import ActionResult
+from phantom.base_connector import BaseConnector
 
 # Usage of the consts file is recommended
 import servicedeskplus_consts as consts
-import requests
-import json
-import ast
-import dateutil.parser
-from datetime import datetime, timedelta
-from bs4 import BeautifulSoup
 
 
 class RetVal(tuple):
