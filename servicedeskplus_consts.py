@@ -47,8 +47,7 @@ REQUEST_FIELDS = ['subject', 'description', 'request_type', 'impact', 'status', 
 FIELDS_WITH_NAME = ['request_type', 'impact', 'status', 'mode', 'level', 'urgency', 'priority', 'service_category',
                     'requester', 'site', 'group', 'technician', 'category', 'subcategory', 'item']
 
-SDP_API_VERSION = '/api/v3/'
-API_GET_REQUESTS = f"{SDP_API_VERSION}requests"
+API_GET_REQUESTS = "/api/v3/requests"
 API_DELETE_ENDPOINT = { "onprem": "/move_to_trash", "cloud": "" }
 API_ASSIGN_ENDPOINT = { "onprem": "assign", "cloud": "_assign" }
 API_CLOSE_ENDPOINT = { "onprem": "close", "cloud": "_close" }
