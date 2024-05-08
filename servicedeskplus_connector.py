@@ -43,25 +43,12 @@ class ServicedeskplusConnector(BaseConnector):
         # modify this as you deem fit.
         self._base_url = None
         self._account_url = None
-        self.API_DELETE_ENDPOINT = None
-        self.API_ASSIGN_ENDPOINT = None
-        self.API_CLOSE_ENDPOINT = None
         self._onprem = False
 
     def _get_headers(self, token):
         return {
             'Authtoken': token
         }
-
-    def _set_apis(self):
-        if self._onprem:
-            self.API_DELETE_ENDPOINT = "/move_to_trash"
-            self.API_ASSIGN_ENDPOINT = "assign"
-            self.API_CLOSE_ENDPOINT = "close"
-        else:
-            self.API_DELETE_ENDPOINT = ""
-            self.API_ASSIGN_ENDPOINT = "_assign"
-            self.API_CLOSE_ENDPOINT = "_close"
 
     def _get_error_message_from_exception(self, e):
         """
@@ -304,8 +291,8 @@ class ServicedeskplusConnector(BaseConnector):
             r = requests.get(url, verify=False)
             resp_json = r.json()
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            self.debug_print(f"Unable to query SOAR for containers: {error_msg}")
+            error_message = self._get_error_message_from_exception(e)
+            self.debug_print(f"Unable to query SOAR for containers: {error_message}")
             return
 
         if resp_json.get("count", 0) <= 0:
@@ -316,8 +303,8 @@ class ServicedeskplusConnector(BaseConnector):
                 container_id = resp_json.get("data", [])[0]["id"]
                 self.debug_print(f"Found container id: {container_id}")
             except Exception as e:
-                error_msg = self._get_error_message_from_exception(e)
-                self.debug_print(f"Container results are not proper: {error_msg}")
+                error_message = self._get_error_message_from_exception(e)
+                self.debug_print(f"Container results are not proper: {error_message}")
                 return
 
             return container_id
@@ -556,10 +543,10 @@ class ServicedeskplusConnector(BaseConnector):
                 self.save_progress("Error {}".format(action_result.get_message()))
                 return action_result.get_status()
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message))
             return action_result.set_status(
-                phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_msg)
+                phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message)
             )
 
         self.save_progress("Successfully received a response from server")
@@ -645,7 +632,8 @@ class ServicedeskplusConnector(BaseConnector):
         request_id = param.get('request_id')
 
         # NOTE URL changes for Cloud data centres
-        url = f"{consts.API_GET_REQUESTS}/{request_id}{self.API_DELETE_ENDPOINT}"
+        delete_endpoint = consts.API_DELETE_ENDPOINT["onprem"] if self._onprem else consts.API_DELETE_ENDPOINT["cloud"]
+        url = f"{consts.API_GET_REQUESTS}/{request_id}{delete_endpoint}"
 
         # make rest call
         ret_val, response = self._make_rest_call(
@@ -675,7 +663,8 @@ class ServicedeskplusConnector(BaseConnector):
         request_fields = json.loads(param['fields'])
 
         # NOTE URL changes for Cloud data centres
-        url = f"{consts.API_GET_REQUESTS}/{request_id}/{self.API_ASSIGN_ENDPOINT}"
+        assign_endpoint = consts.API_ASSIGN_ENDPOINT["onprem"] if self._onprem else consts.API_ASSIGN_ENDPOINT["cloud"]
+        url = f"{consts.API_GET_REQUESTS}/{request_id}/{assign_endpoint}"
 
         query = self.get_query_params(request_fields)
         data = {
@@ -724,7 +713,8 @@ class ServicedeskplusConnector(BaseConnector):
             }
 
         # NOTE URL changes for Cloud data centres
-        url = f"{consts.API_GET_REQUESTS}/{request_id}/{self.API_CLOSE_ENDPOINT}"
+        close_endpoint = consts.API_CLOSE_ENDPOINT["onprem"] if self._onprem else consts.API_CLOSE_ENDPOINT["cloud"]
+        url = f"{consts.API_GET_REQUESTS}/{request_id}/{close_endpoint}"
 
         data = {
             "input_data": f"{input_data}"
@@ -906,10 +896,10 @@ class ServicedeskplusConnector(BaseConnector):
                 self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=action_result.get_message()))
                 return action_result.get_status()
         except Exception as e:
-            error_msg = self._get_error_message_from_exception(e)
-            self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=error_msg))
+            error_message = self._get_error_message_from_exception(e)
+            self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message))
             return action_result.set_status(
-                phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_msg)
+                phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message)
             )
 
         self.debug_print(f"Total tickets fetched: {len(tickets)}")
@@ -924,9 +914,9 @@ class ServicedeskplusConnector(BaseConnector):
                 if phantom.is_fail(ret_val):
                     return action_result.get_status()
             except Exception as e:
-                error_msg = self._get_error_message_from_exception(e)
+                error_message = self._get_error_message_from_exception(e)
                 return action_result.set_status(
-                    phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKET.format(error=error_msg, ticket_id=ticket["id"])
+                    phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKET.format(error=error_message, ticket_id=ticket["id"])
                 )
             ticket["last_updated_time"] = last_updated_on[0]["last_updated_time"]
             self._save_ticket_container(action_result, ticket)
@@ -999,9 +989,6 @@ class ServicedeskplusConnector(BaseConnector):
             return self.set_status(phantom.APP_ERROR, consts.SDP_ERR_NOT_IMPLEMENTED)
             # self._base_url = consts.SDP_DATA_CENTERS[data_centre]['base_url']
             # self._account_url = consts.SDP_DATA_CENTERS[data_centre]['oauth']
-
-        # Configuring API Endpoints
-        self._set_apis()
 
         return phantom.APP_SUCCESS
 

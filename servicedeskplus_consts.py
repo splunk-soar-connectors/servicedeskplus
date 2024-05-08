@@ -49,6 +49,9 @@ FIELDS_WITH_NAME = ['request_type', 'impact', 'status', 'mode', 'level', 'urgenc
 
 SDP_API_VERSION = '/api/v3/'
 API_GET_REQUESTS = f"{SDP_API_VERSION}requests"
+API_DELETE_ENDPOINT = { "onprem": "/move_to_trash", "cloud": "" }
+API_ASSIGN_ENDPOINT = { "onprem": "assign", "cloud": "_assign" }
+API_CLOSE_ENDPOINT = { "onprem": "close", "cloud": "_close" }
 
 # Constants relating to 'get_error_message_from_exception'
 ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or action parameters."
