@@ -483,11 +483,13 @@ class ServicedeskplusConnector(BaseConnector):
         """Retrieves tickets from ServiceDeskPlus that recently have been updated"""
         time_from = since.strftime('%s')
 
-        search_criteria = [{
+        search_criteria = [
+            {
                 'field': 'last_updated_time',
                 'value': f'{time_from}',
                 'condition': 'gte'
-            }, {
+            },
+            {
                 "field": "created_time",
                 "condition": "gte",
                 "value": f"{time_from}",
