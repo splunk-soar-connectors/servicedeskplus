@@ -12,7 +12,7 @@
     "product_version_regex": ".*",
     "publisher": "Splunk Inc.",
     "license": "Copyright (c) Splunk Inc., 2024",
-    "app_version": "1.0.0",
+    "app_version": "1.0.1",
     "utctime_updated": "2024-01-25T10:00:07.352934Z",
     "package_name": "phantom_servicedeskplus",
     "main_module": "servicedeskplus_connector.py",
