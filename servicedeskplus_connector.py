@@ -1,6 +1,6 @@
 # File: servicedeskplus_connector.py
 #
-# Copyright (c) Splunk, 2024
+# Copyright (c) Splunk Inc., 2024
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
