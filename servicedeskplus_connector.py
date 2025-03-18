@@ -1,6 +1,6 @@
 # File: servicedeskplus_connector.py
 #
-# Copyright (c) Splunk Inc., 2024
+# Copyright (c) Splunk Inc., 2024-2025
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,13 +14,13 @@
 # and limitations under the License.
 #
 # Python 3 Compatibility imports
-from __future__ import print_function, unicode_literals
 
 import ast
 import json
 from datetime import datetime, timedelta
 
 import dateutil.parser
+
 # Phantom App imports
 import phantom.app as phantom
 import requests
@@ -33,17 +33,14 @@ import servicedeskplus_consts as consts
 
 
 class RetVal(tuple):
-
     def __new__(cls, val1, val2=None):
         return tuple.__new__(RetVal, (val1, val2))
 
 
 class ServicedeskplusConnector(BaseConnector):
-
     def __init__(self):
-
         # Call the BaseConnectors init first
-        super(ServicedeskplusConnector, self).__init__()
+        super().__init__()
 
         self._state = None
 
@@ -55,9 +52,7 @@ class ServicedeskplusConnector(BaseConnector):
         self._onprem = False
 
     def _get_headers(self, token):
-        return {
-            'Authtoken': token
-        }
+        return {"Authtoken": token}
 
     def _get_error_message_from_exception(self, e):
         """
@@ -82,14 +77,14 @@ class ServicedeskplusConnector(BaseConnector):
             pass
 
         if not error_code:
-            error_text = "Error Message: {}".format(error_message)
+            error_text = f"Error Message: {error_message}"
         else:
-            error_text = "Error Code: {}. Error Message: {}".format(error_code, error_message)
+            error_text = f"Error Code: {error_code}. Error Message: {error_message}"
 
         return error_text
 
     def _validate_integer(self, action_result, parameter, key, allow_zero=False):
-        """ This method is to check if the provided input parameter value
+        """This method is to check if the provided input parameter value
         is a non-zero positive integer and returns the integer value of the parameter itself.
         :param action_result: Action result or BaseConnector object
         :param parameter: input parameter
@@ -118,11 +113,7 @@ class ServicedeskplusConnector(BaseConnector):
         if response.status_code == 200:
             return RetVal(phantom.APP_SUCCESS, {})
 
-        return RetVal(
-            action_result.set_status(
-                phantom.APP_ERROR, consts.SDP_ERR_EMPTY_RESPONSE.format(code=response.status_code)
-            ), None
-        )
+        return RetVal(action_result.set_status(phantom.APP_ERROR, consts.SDP_ERR_EMPTY_RESPONSE.format(code=response.status_code)), None)
 
     def _process_html_response(self, response, action_result):
         # An html response, treat it like an error
@@ -131,16 +122,16 @@ class ServicedeskplusConnector(BaseConnector):
         try:
             soup = BeautifulSoup(response.text, "html.parser")
             error_text = soup.text
-            split_lines = error_text.split('\n')
+            split_lines = error_text.split("\n")
             split_lines = [x.strip() for x in split_lines if x.strip()]
-            error_text = '\n'.join(split_lines)
+            error_text = "\n".join(split_lines)
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             error_text = consts.SDP_ERR_UNABLE_TO_PARSE_HTML_RESPONSE.format(error=error_message)
 
-        message = "Status Code: {0}. Data from server:\n{1}\n".format(status_code, error_text)
+        message = f"Status Code: {status_code}. Data from server:\n{error_text}\n"
 
-        message = message.replace(u'{', '{{').replace(u'}', '}}')
+        message = message.replace("{", "{{").replace("}", "}}")
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
 
     def _process_json_response(self, r, action_result):
@@ -151,9 +142,7 @@ class ServicedeskplusConnector(BaseConnector):
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             return RetVal(
-                action_result.set_status(
-                    phantom.APP_ERROR, consts.SDP_ERR_UNABLE_TO_PARSE_JSON_RESPONSE.format(error=error_message)
-                ), None
+                action_result.set_status(phantom.APP_ERROR, consts.SDP_ERR_UNABLE_TO_PARSE_JSON_RESPONSE.format(error=error_message)), None
             )
 
         # Please specify the status codes here
@@ -161,31 +150,28 @@ class ServicedeskplusConnector(BaseConnector):
             return RetVal(phantom.APP_SUCCESS, resp_json)
 
         # You should process the error returned in the json
-        message = "Error from server. Status Code: {0} Data from server: {1}".format(
-            status_code,
-            r.text.replace(u'{', '{{').replace(u'}', '}}')
-        )
+        message = "Error from server. Status Code: {} Data from server: {}".format(status_code, r.text.replace("{", "{{").replace("}", "}}"))
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), resp_json)
 
     def _process_response(self, r, action_result):
         # store the r_text in debug data, it will get dumped in the logs if the action fails
-        if hasattr(action_result, 'add_debug_data'):
-            action_result.add_debug_data({'r_status_code': r.status_code})
-            action_result.add_debug_data({'r_text': r.text})
-            action_result.add_debug_data({'r_headers': r.headers})
+        if hasattr(action_result, "add_debug_data"):
+            action_result.add_debug_data({"r_status_code": r.status_code})
+            action_result.add_debug_data({"r_text": r.text})
+            action_result.add_debug_data({"r_headers": r.headers})
 
         # Process each 'Content-Type' of response separately
 
         # Process a json response
-        if 'json' in r.headers.get('Content-Type', ''):
+        if "json" in r.headers.get("Content-Type", ""):
             return self._process_json_response(r, action_result)
 
         # Process an HTML response, Do this no matter what the api talks.
         # There is a high chance of a PROXY in between phantom and the rest of
         # world, in case of errors, PROXY's return HTML, this function parses
         # the error and adds it to the action_result.
-        if 'html' in r.headers.get('Content-Type', ''):
+        if "html" in r.headers.get("Content-Type", ""):
             return self._process_html_response(r, action_result)
 
         # it's not content-type that is to be parsed, handle an empty response
@@ -193,9 +179,8 @@ class ServicedeskplusConnector(BaseConnector):
             return self._process_empty_response(r, action_result)
 
         # everything else is actually an error at this point
-        message = "Can't process response from server. Status Code: {0} Data from server: {1}".format(
-            r.status_code,
-            r.text.replace('{', '{{').replace('}', '}}')
+        message = "Can't process response from server. Status Code: {} Data from server: {}".format(
+            r.status_code, r.text.replace("{", "{{").replace("}", "}}")
         )
 
         return RetVal(action_result.set_status(phantom.APP_ERROR, message), None)
@@ -204,17 +189,14 @@ class ServicedeskplusConnector(BaseConnector):
         # **kwargs can be any additional parameters that requests.request accepts
 
         config = self.get_config()
-        headers = self._get_headers(config.get('technician_key'))
+        headers = self._get_headers(config.get("technician_key"))
 
         resp_json = None
 
         try:
             request_func = getattr(requests, method)
         except AttributeError:
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, "Invalid method: {0}".format(method)),
-                resp_json
-            )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, f"Invalid method: {method}"), resp_json)
 
         # Create a URL to connect to
         url = self._base_url + endpoint
@@ -223,18 +205,15 @@ class ServicedeskplusConnector(BaseConnector):
             r = request_func(
                 url,
                 # auth=(username, password),  # basic authentication
-                verify=config.get('verify_server_cert', False),
+                verify=config.get("verify_server_cert", False),
                 headers=headers,
-                **kwargs
+                **kwargs,
             )
         except Exception as e:
-            error_text = consts.SDP_EXCEPTION_ERR_MSG.format(msg=consts.SDP_ERR_CONNECTIVITY_FAILURE,
-                error=self._get_error_message_from_exception(e))
-            return RetVal(
-                action_result.set_status(
-                    phantom.APP_ERROR, error_text
-                ), resp_json
+            error_text = consts.SDP_EXCEPTION_ERR_MSG.format(
+                msg=consts.SDP_ERR_CONNECTIVITY_FAILURE, error=self._get_error_message_from_exception(e)
             )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, error_text), resp_json)
 
         return self._process_response(r, action_result)
 
@@ -242,18 +221,18 @@ class ServicedeskplusConnector(BaseConnector):
         if not value:
             return {}
         try:
-            if value[0] == '{' and value[-1] == '}':  # check if the user entered a dict as the value
+            if value[0] == "{" and value[-1] == "}":  # check if the user entered a dict as the value
                 return ast.literal_eval(value)
 
-            fields = value.split(',')
+            fields = value.split(",")
             rval_dict = {}
             for field in fields:
                 if field:
-                    field_key_value = field.split(':')
+                    field_key_value = field.split(":")
                     if field_key_value[0] and field_key_value[1]:
                         rval_dict[field_key_value[0]] = field_key_value[1]
                     else:
-                        raise Exception('Invalid input')
+                        raise Exception("Invalid input")
             return rval_dict
         except Exception:
             raise Exception(consts.SDP_ERR_ILLEGAL_FORMAT.format(name=name))
@@ -263,43 +242,35 @@ class ServicedeskplusConnector(BaseConnector):
         for field in consts.REQUEST_FIELDS:
             value = param.get(field, None)
             if value:
-                if field in ['udf_fields', 'template']:
+                if field in ["udf_fields", "template"]:
                     request_fields[field] = f"{self.format_params(field, value)}"
-                elif field not in consts.FIELDS_WITH_NAME or (value[0] == '{' and value[-1] == '}'):
+                elif field not in consts.FIELDS_WITH_NAME or (value[0] == "{" and value[-1] == "}"):
                     request_fields[field] = value
                 else:
-                    request_fields[field] = {
-                        'name': value
-                    }
-        return {
-            'request': request_fields
-        }
+                    request_fields[field] = {"name": value}
+        return {"request": request_fields}
 
     def create_requests_list_info(self, start_index, row_count, search_fields, filter_by):
         list_info = {}
         if start_index is not None:
-            list_info['start_index'] = start_index
+            list_info["start_index"] = start_index
         if row_count is not None:
-            list_info['row_count'] = row_count
+            list_info["row_count"] = row_count
         if search_fields:
-            list_info['search_fields'] = search_fields
+            list_info["search_fields"] = search_fields
         if filter_by:
-            list_info['filter_by'] = filter_by
-        list_info['sort_field'] = 'created_time'
-        list_info['sort_order'] = 'asc'
-        list_info['get_total_count'] = True
-        return {
-            'list_info': list_info
-        }
+            list_info["filter_by"] = filter_by
+        list_info["sort_field"] = "created_time"
+        list_info["sort_order"] = "asc"
+        list_info["get_total_count"] = True
+        return {"list_info": list_info}
 
     def _search_ticket_container(self, ticket):
         "Find the SOAR container corresponding to the servicedeskplus ticket"
 
         ticket_id = ticket[consts.SDP_TICKET_JSON_ID]
 
-        url = '{0}rest/container?_filter_source_data_identifier="{1}"&_filter_asset={2}'.format(
-            self.get_phantom_base_url(), ticket_id, self.get_asset_id()
-        )
+        url = f'{self.get_phantom_base_url()}rest/container?_filter_source_data_identifier="{ticket_id}"&_filter_asset={self.get_asset_id()}'
         try:
             r = requests.get(url, verify=False)
             resp_json = r.json()
@@ -326,7 +297,7 @@ class ServicedeskplusConnector(BaseConnector):
         """Update an existing SOAR container with new ticket information"""
 
         updated_container = self._create_ticket_container_json(ticket)
-        url = "{0}rest/container/{1}".format(self.get_phantom_base_url(), container_id)
+        url = f"{self.get_phantom_base_url()}rest/container/{container_id}"
 
         try:
             requests.post(url, data=(json.dumps(updated_container)), verify=False)
@@ -357,7 +328,7 @@ class ServicedeskplusConnector(BaseConnector):
                 if field in consts.FIELDS_WITH_NAME:
                     # self.save_progress(f"{ticket[field]}")
                     if ticket[field] is not None:
-                        cef[field] = ticket[field]['name']
+                        cef[field] = ticket[field]["name"]
 
         ticket_artifact["cef"] = cef
 
@@ -370,7 +341,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         primary = ticket[consts.SDP_TICKET_JSON_ID]
         secondary = ticket.get("subject")
-        return "{} - {}".format(primary, secondary)
+        return f"{primary} - {secondary}"
 
     def _create_ticket_container_json(self, ticket):
         """Creates a new SOAR container based on ticket information"""
@@ -378,8 +349,8 @@ class ServicedeskplusConnector(BaseConnector):
             "name": self._gen_ticket_container_title(ticket),
             "label": self.get_config().get("ingest", {}).get("container_label"),
             "source_data_identifier": ticket[consts.SDP_TICKET_JSON_ID],
-            "description": ticket["short_description"] if 'short_description' in ticket else ticket['description'],
-            "data": json.dumps(ticket)
+            "description": ticket["short_description"] if "short_description" in ticket else ticket["description"],
+            "data": json.dumps(ticket),
         }
         return ticket_container
 
@@ -411,29 +382,16 @@ class ServicedeskplusConnector(BaseConnector):
 
     def _get_ticket_last_updated_time(self, action_result, ticket_id):
         """Retrieves the last updated time of a single ticket"""
-        search_criteria = [{
-            'field': 'id',
-            'value': f'{ticket_id}',
-            'condition': 'eq'
-        }]
+        search_criteria = [{"field": "id", "value": f"{ticket_id}", "condition": "eq"}]
 
-        list_info = {
-            "list_info": {
-                "search_criteria": search_criteria,
-                "fields_required": ["last_updated_time"]
-            }
-        }
+        list_info = {"list_info": {"search_criteria": search_criteria, "fields_required": ["last_updated_time"]}}
 
-        params = {
-            'input_data': f"{list_info}"
-        }
+        params = {"input_data": f"{list_info}"}
 
         self.debug_print(f"Parameters {params}")
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            consts.API_GET_REQUESTS, action_result, params=params
-        )
+        ret_val, response = self._make_rest_call(consts.API_GET_REQUESTS, action_result, params=params)
 
         if phantom.is_fail(ret_val) or "requests" not in response:
             # the call to the 3rd party device or service failed, action result should contain all the error details
@@ -443,10 +401,7 @@ class ServicedeskplusConnector(BaseConnector):
                 message = f"{consts.SDP_ERR_RETRIEVE_TICKETS}. {action_result_message}"
             else:
                 message = consts.SDP_ERR_RETRIEVE_TICKETS
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, message),
-                response
-            )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, message), response)
 
         return ret_val, response["requests"]
 
@@ -458,9 +413,7 @@ class ServicedeskplusConnector(BaseConnector):
             if next_index > 1:
                 list_info[consts.SDP_JSON_LIST_INFO]["start_index"] = next_index
 
-            params = {
-                'input_data': f"{list_info}"
-            }
+            params = {"input_data": f"{list_info}"}
 
             self.debug_print(f"Parameters {params}")
 
@@ -490,34 +443,23 @@ class ServicedeskplusConnector(BaseConnector):
 
     def _retrieve_tickets(self, action_result, since, limit):
         """Retrieves tickets from ServiceDeskPlus that recently have been updated"""
-        time_from = since.strftime('%s')
+        time_from = since.strftime("%s")
 
         search_criteria = [
-            {
-                'field': 'last_updated_time',
-                'value': f'{time_from}',
-                'condition': 'gte'
-            },
-            {
-                "field": "created_time",
-                "condition": "gte",
-                "value": f"{time_from}",
-                "logical_operator": "OR"
-            }
+            {"field": "last_updated_time", "value": f"{time_from}", "condition": "gte"},
+            {"field": "created_time", "condition": "gte", "value": f"{time_from}", "logical_operator": "OR"},
         ]
 
         list_info = {
-            'list_info': {
-                'search_criteria': search_criteria,
-                'sort_field': 'created_time',
-                'sort_order': 'asc',
+            "list_info": {
+                "search_criteria": search_criteria,
+                "sort_field": "created_time",
+                "sort_order": "asc",
             }
         }
 
         # make rest call
-        ret_val, requests = self._make_paginated_call(
-            consts.API_GET_REQUESTS, action_result, list_info, limit
-        )
+        ret_val, requests = self._make_paginated_call(consts.API_GET_REQUESTS, action_result, list_info, limit)
 
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
@@ -527,42 +469,35 @@ class ServicedeskplusConnector(BaseConnector):
                 message = f"{consts.SDP_ERR_RETRIEVE_TICKETS}. {action_result_message}"
             else:
                 message = consts.SDP_ERR_RETRIEVE_TICKETS
-            return RetVal(
-                action_result.set_status(phantom.APP_ERROR, message),
-                requests
-            )
+            return RetVal(action_result.set_status(phantom.APP_ERROR, message), requests)
 
         self.save_progress(consts.SDP_SUCCESS_MSG)
 
         return ret_val, requests
 
     def _handle_list_tickets(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         # Add an action result object to self (BaseConnector) to represent the action for this param
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        start_index = param.get('start_index', None)
-        row_count = param.get('row_count', None)
-        search_fields = param.get('search_fields', None)
-        filter_by = param.get('filter_by', None)
+        start_index = param.get("start_index", None)
+        row_count = param.get("row_count", None)
+        search_fields = param.get("search_fields", None)
+        filter_by = param.get("filter_by", None)
         list_info = self.create_requests_list_info(start_index, row_count, search_fields, filter_by)
 
         try:
             # make rest call
-            ret_val, requests = self._make_paginated_call(
-                consts.API_GET_REQUESTS, action_result, list_info
-            )
+            ret_val, requests = self._make_paginated_call(consts.API_GET_REQUESTS, action_result, list_info)
             if phantom.is_fail(ret_val):
                 # the call to the 3rd party device or service failed, action result should contain all the error details
                 # for now the return is commented out, but after implementation, return from here
-                self.save_progress("Error {}".format(action_result.get_message()))
+                self.save_progress(f"Error {action_result.get_message()}")
                 return action_result.get_status()
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message))
-            return action_result.set_status(
-                phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message)
-            )
+            return action_result.set_status(phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message))
 
         self.save_progress(consts.SDP_SUCCESS_MSG)
 
@@ -570,56 +505,48 @@ class ServicedeskplusConnector(BaseConnector):
             action_result.add_data(request)
 
         summary = action_result.set_summary({})
-        summary['num_tickets'] = len(requests)
+        summary["num_tickets"] = len(requests)
 
         # Return success
         return action_result.set_status(phantom.APP_SUCCESS)
 
     def _handle_update_ticket(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        request_id = param.get('request_id')
+        request_id = param.get("request_id")
 
-        query = self.get_query_params(json.loads(param['fields']))
-        data = {
-            'input_data': f'{query}'
-        }
+        query = self.get_query_params(json.loads(param["fields"]))
+        data = {"input_data": f"{query}"}
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            f"{consts.API_GET_REQUESTS}/{request_id}", action_result, data=data, method="put"
-        )
+        ret_val, response = self._make_rest_call(f"{consts.API_GET_REQUESTS}/{request_id}", action_result, data=data, method="put")
 
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            self.save_progress("Error {}".format(action_result.get_message()))
+            self.save_progress(f"Error {action_result.get_message()}")
             return action_result.get_status()
 
         self.save_progress(consts.SDP_SUCCESS_MSG)
 
         # Add the response into the data section
-        action_result.add_data(response['request'])
+        action_result.add_data(response["request"])
         action_result.set_summary({})
 
         return action_result.set_status(phantom.APP_SUCCESS, consts.SDP_SUCCESS_UPDATE_MSG)
 
     def _handle_create_ticket(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        request_fields = json.loads(param['fields'])
+        request_fields = json.loads(param["fields"])
 
         query = self.get_query_params(request_fields)
-        data = {
-            'input_data': f'{query}'
-        }
+        data = {"input_data": f"{query}"}
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            consts.API_GET_REQUESTS, action_result, data=data, method="post"
-        )
+        ret_val, response = self._make_rest_call(consts.API_GET_REQUESTS, action_result, data=data, method="post")
 
         # Add the response into the data section
         action_result.add_data(response)
@@ -627,33 +554,31 @@ class ServicedeskplusConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            self.save_progress("Error {}".format(action_result.get_message()))
+            self.save_progress(f"Error {action_result.get_message()}")
             return action_result.get_status()
 
         self.save_progress(consts.SDP_SUCCESS_MSG)
 
-        request_id = response['request']['id']
+        request_id = response["request"]["id"]
         self.save_progress(f"Created request with id {request_id}")
 
         summary = action_result.set_summary({})
-        summary['new_request_id'] = request_id
+        summary["new_request_id"] = request_id
 
         return action_result.set_status(phantom.APP_SUCCESS, f"Successfully created ticket {request_id}")
 
     def _handle_delete_ticket(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        request_id = param.get('request_id')
+        request_id = param.get("request_id")
 
         # NOTE URL changes for Cloud data centres
         delete_endpoint = consts.API_DELETE_ENDPOINT["onprem"] if self._onprem else consts.API_DELETE_ENDPOINT["cloud"]
         url = f"{consts.API_GET_REQUESTS}/{request_id}{delete_endpoint}"
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            url, action_result, method="delete"
-        )
+        ret_val, response = self._make_rest_call(url, action_result, method="delete")
 
         # Add the response into the data section
         action_result.add_data(response)
@@ -661,7 +586,7 @@ class ServicedeskplusConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            self.save_progress("Error {}".format(action_result.get_message()))
+            self.save_progress(f"Error {action_result.get_message()}")
             return action_result.get_status()
 
         self.save_progress(consts.SDP_SUCCESS_MSG)
@@ -671,78 +596,68 @@ class ServicedeskplusConnector(BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS, "Successfully deleted ticket")
 
     def _handle_assign_ticket(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        request_id = param.get('request_id')
-        request_fields = json.loads(param['fields'])
+        request_id = param.get("request_id")
+        request_fields = json.loads(param["fields"])
 
         # NOTE URL changes for Cloud data centres
         assign_endpoint = consts.API_ASSIGN_ENDPOINT["onprem"] if self._onprem else consts.API_ASSIGN_ENDPOINT["cloud"]
         url = f"{consts.API_GET_REQUESTS}/{request_id}/{assign_endpoint}"
 
         query = self.get_query_params(request_fields)
-        data = {
-            'input_data': f'{query}'
-        }
+        data = {"input_data": f"{query}"}
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            url, action_result, method="put", data=data
-        )
+        ret_val, response = self._make_rest_call(url, action_result, method="put", data=data)
 
-        response_status = response['response_status']
+        response_status = response["response_status"]
         # Add the response into the data section
         action_result.add_data(response_status)
         action_result.set_summary({})
 
         if phantom.is_fail(ret_val):
             message = response_status["messages"][0]
-            msg = f"'{message['field']}' value does not exist or not in use or user cannot set the value" if 'field' in message else ""
+            msg = f"'{message['field']}' value does not exist or not in use or user cannot set the value" if "field" in message else ""
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            self.save_progress("{}".format(action_result.get_message()))
-            self.save_progress("Error details: {}".format(msg))
+            self.save_progress(f"{action_result.get_message()}")
+            self.save_progress(f"Error details: {msg}")
             return action_result.get_status()
 
         return action_result.set_status(phantom.APP_SUCCESS, "Successfully assigned ticket")
 
     def _handle_close_ticket(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        request_id = param.get('request_id')
+        request_id = param.get("request_id")
         input_data = {
             "request": {
                 "closure_info": {
                     "requester_ack_resolution": param.get("requester_ack_resolution", False),
-                    "requester_ack_comments": param.get("requester_ack_comments", ''),
-                    "closure_comments": param.get("closure_comments", '')
+                    "requester_ack_comments": param.get("requester_ack_comments", ""),
+                    "closure_comments": param.get("closure_comments", ""),
                 }
             }
         }
 
         if param.get("closure_code"):
-            input_data["request"]["closure_info"]["closure_code"] = {
-                "name": param.get("code")
-            }
+            input_data["request"]["closure_info"]["closure_code"] = {"name": param.get("code")}
 
         # NOTE URL changes for Cloud data centres
         close_endpoint = consts.API_CLOSE_ENDPOINT["onprem"] if self._onprem else consts.API_CLOSE_ENDPOINT["cloud"]
         url = f"{consts.API_GET_REQUESTS}/{request_id}/{close_endpoint}"
 
-        data = {
-            "input_data": f"{input_data}"
-        }
+        data = {"input_data": f"{input_data}"}
 
         self.save_progress(f"{data}")
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            url, action_result, method="put", data=data
-        )
+        ret_val, response = self._make_rest_call(url, action_result, method="put", data=data)
 
-        response_status = response['response_status']
+        response_status = response["response_status"]
         # Add the response into the data section
         action_result.add_data(response_status)
         action_result.set_summary({})
@@ -750,21 +665,19 @@ class ServicedeskplusConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            self.save_progress("Error {}".format(action_result.get_message()))
+            self.save_progress(f"Error {action_result.get_message()}")
             return action_result.get_status()
 
         return action_result.set_status(phantom.APP_SUCCESS, "Successfully closed ticket")
 
     def _handle_list_linked_tickets(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        request_id = param.get('request_id')
+        request_id = param.get("request_id")
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            f"{consts.API_GET_REQUESTS}/{request_id}/link_requests", action_result
-        )
+        ret_val, response = self._make_rest_call(f"{consts.API_GET_REQUESTS}/{request_id}/link_requests", action_result)
 
         # Add the response into the data section
         action_result.add_data(response)
@@ -772,27 +685,26 @@ class ServicedeskplusConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            self.save_progress("Error {}".format(action_result.get_message()))
+            self.save_progress(f"Error {action_result.get_message()}")
             return action_result.get_status()
 
         self.save_progress(consts.SDP_SUCCESS_MSG)
 
         summary = action_result.set_summary({})
-        summary['num_linked_tickets'] = len(response['link_requests'])
+        summary["num_linked_tickets"] = len(response["link_requests"])
 
-        return action_result.set_status(phantom.APP_SUCCESS,
-                                        f"Successfully fetched [{summary['num_linked_tickets']}] tickets linked to ticket [{request_id}]")
+        return action_result.set_status(
+            phantom.APP_SUCCESS, f"Successfully fetched [{summary['num_linked_tickets']}] tickets linked to ticket [{request_id}]"
+        )
 
     def _handle_get_ticket_resolution(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        request_id = param.get('request_id')
+        request_id = param.get("request_id")
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            f"{consts.API_GET_REQUESTS}/{request_id}/resolutions", action_result
-        )
+        ret_val, response = self._make_rest_call(f"{consts.API_GET_REQUESTS}/{request_id}/resolutions", action_result)
 
         # Add the response into the data section
         action_result.add_data(response)
@@ -800,7 +712,7 @@ class ServicedeskplusConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            self.save_progress("Error {}".format(action_result.get_message()))
+            self.save_progress(f"Error {action_result.get_message()}")
             return action_result.get_status()
 
         self.save_progress(consts.SDP_SUCCESS_MSG)
@@ -810,24 +722,15 @@ class ServicedeskplusConnector(BaseConnector):
         return action_result.set_status(phantom.APP_SUCCESS, f"Successfully fetched resolution for ticket [{request_id}]")
 
     def _handle_set_ticket_resolution(self, param):
-        self.save_progress("In action handler for: {0}".format(self.get_action_identifier()))
+        self.save_progress(f"In action handler for: {self.get_action_identifier()}")
         action_result = self.add_action_result(ActionResult(dict(param)))
 
-        request_id = param.get('request_id')
-        query = {
-            'resolution': {
-                'content': param.get('content'),
-                'add_to_linked_requests': param.get('add_to_linked_requests', False)
-            }
-        }
-        data = {
-            'input_data': f'{query}'
-        }
+        request_id = param.get("request_id")
+        query = {"resolution": {"content": param.get("content"), "add_to_linked_requests": param.get("add_to_linked_requests", False)}}
+        data = {"input_data": f"{query}"}
 
         # make rest call
-        ret_val, response = self._make_rest_call(
-            f"{consts.API_GET_REQUESTS}/{request_id}/resolutions", action_result, method="post", data=data
-        )
+        ret_val, response = self._make_rest_call(f"{consts.API_GET_REQUESTS}/{request_id}/resolutions", action_result, method="post", data=data)
 
         # Add the response into the data section
         action_result.add_data(response)
@@ -835,7 +738,7 @@ class ServicedeskplusConnector(BaseConnector):
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
             # for now the return is commented out, but after implementation, return from here
-            self.save_progress("Error {}".format(action_result.get_message()))
+            self.save_progress(f"Error {action_result.get_message()}")
             return action_result.get_status()
 
         self.save_progress(consts.SDP_SUCCESS_MSG)
@@ -855,9 +758,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         self.save_progress("Connecting to endpoint")
         # make rest call
-        ret_val, response = self._make_rest_call(
-            consts.API_GET_REQUESTS, action_result, params=None
-        )
+        ret_val, response = self._make_rest_call(consts.API_GET_REQUESTS, action_result, params=None)
 
         if phantom.is_fail(ret_val):
             # the call to the 3rd party device or service failed, action result should contain all the error details
@@ -904,18 +805,14 @@ class ServicedeskplusConnector(BaseConnector):
 
         tickets = []
         try:
-            ret_val, tickets = self._retrieve_tickets(
-                action_result, last_run, max_tickets
-            )
+            ret_val, tickets = self._retrieve_tickets(action_result, last_run, max_tickets)
             if phantom.is_fail(ret_val):
                 self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=action_result.get_message()))
                 return action_result.get_status()
         except Exception as e:
             error_message = self._get_error_message_from_exception(e)
             self.debug_print(consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message))
-            return action_result.set_status(
-                phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message)
-            )
+            return action_result.set_status(phantom.APP_ERROR, consts.SDP_ERR_FETCHING_TICKETS.format(error=error_message))
 
         self.debug_print(f"Total tickets fetched: {len(tickets)}")
         self.save_progress(f"Total tickets fetched: {len(tickets)}")
@@ -923,9 +820,7 @@ class ServicedeskplusConnector(BaseConnector):
             # Adding info about ticket last updated time.
             # This info is surprisingly not automatically returned by the API
             try:
-                ret_val, last_updated_on = self._get_ticket_last_updated_time(
-                    action_result, ticket["id"]
-                )
+                ret_val, last_updated_on = self._get_ticket_last_updated_time(action_result, ticket["id"])
                 if phantom.is_fail(ret_val):
                     return action_result.get_status()
             except Exception as e:
@@ -946,7 +841,7 @@ class ServicedeskplusConnector(BaseConnector):
 
         self.debug_print("action_id", self.get_action_identifier())
 
-        if action_id == 'test_connectivity':
+        if action_id == "test_connectivity":
             ret_val = self._handle_test_connectivity(param)
         elif action_id == "update_ticket":
             ret_val = self._handle_update_ticket(param)
@@ -988,16 +883,16 @@ class ServicedeskplusConnector(BaseConnector):
         optional_config_name = config.get('optional_config_name')
         """
 
-        self._base_url = config.get('base_url')
+        self._base_url = config.get("base_url")
 
-        data_centre = config.get('data_centre')
+        data_centre = config.get("data_centre")
         if data_centre == "On-Premises":
             self._onprem = True
 
             if not self._base_url:
                 return self.set_status(phantom.APP_ERROR, consts.SDP_ERR_INVALID_CONFIGURATION)
 
-            if self._base_url.endswith('/'):
+            if self._base_url.endswith("/"):
                 self._base_url = self._base_url[:-1]
 
         else:
@@ -1019,9 +914,9 @@ def main():
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument('input_test_json', help='Input Test JSON file')
-    argparser.add_argument('-u', '--username', help='username', required=False)
-    argparser.add_argument('-p', '--password', help='password', required=False)
+    argparser.add_argument("input_test_json", help="Input Test JSON file")
+    argparser.add_argument("-u", "--username", help="username", required=False)
+    argparser.add_argument("-p", "--password", help="password", required=False)
 
     args = argparser.parse_args()
     session_id = None
@@ -1030,31 +925,31 @@ def main():
     password = args.password
 
     if username is not None and password is None:
-
         # User specified a username but not a password, so ask
         import getpass
+
         password = getpass.getpass("Password: ")
 
     if username and password:
         try:
-            login_url = ServicedeskplusConnector._get_phantom_base_url() + '/login'
+            login_url = ServicedeskplusConnector._get_phantom_base_url() + "/login"
 
             print("Accessing the Login page")
             r = requests.get(login_url, verify=False)
-            csrftoken = r.cookies['csrftoken']
+            csrftoken = r.cookies["csrftoken"]
 
             data = dict()
-            data['username'] = username
-            data['password'] = password
-            data['csrfmiddlewaretoken'] = csrftoken
+            data["username"] = username
+            data["password"] = password
+            data["csrfmiddlewaretoken"] = csrftoken
 
             headers = dict()
-            headers['Cookie'] = 'csrftoken=' + csrftoken
-            headers['Referer'] = login_url
+            headers["Cookie"] = "csrftoken=" + csrftoken
+            headers["Referer"] = login_url
 
             print("Logging into Platform to get the session id")
             r2 = requests.post(login_url, verify=False, data=data, headers=headers)
-            session_id = r2.cookies['sessionid']
+            session_id = r2.cookies["sessionid"]
         except Exception as e:
             print("Unable to get session id from the platform. Error: " + str(e))
             exit(1)
@@ -1068,8 +963,8 @@ def main():
         connector.print_progress_message = True
 
         if session_id is not None:
-            in_json['user_session_token'] = session_id
-            connector._set_csrf_info(csrftoken, headers['Referer'])
+            in_json["user_session_token"] = session_id
+            connector._set_csrf_info(csrftoken, headers["Referer"])
 
         ret_val = connector._handle_action(json.dumps(in_json), None)
         print(json.dumps(json.loads(ret_val), indent=4))
@@ -1077,5 +972,5 @@ def main():
     exit(0)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
