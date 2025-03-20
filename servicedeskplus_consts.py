@@ -1,6 +1,6 @@
 # File: servicedeskplus_consts.py
 #
-# Copyright (c) Splunk Inc., 2024
+# Copyright (c) Splunk Inc., 2024-2025
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -20,51 +20,64 @@ SDP_TICKET_ARTIFACT_LABEL = "servicedeskplus_ticket"
 SDP_TICKET_JSON_ID = "id"
 
 SDP_DATA_CENTERS = {
-    'United States': {
-        'base_url': 'https://sdpondemand.manageengine.com',
-        'oauth': 'https://accounts.zoho.com/oauth/v2/token'
-    },
-    'Europe': {
-        'base_url': 'https://sdpondemand.manageengine.eu',
-        'oauth': 'https://accounts.zoho.eu/oauth/v2/token'
-    },
-    'India': {
-        'base_url': 'https://sdpondemand.manageengine.in',
-        'oauth': 'https://accounts.zoho.in/oauth/v2/token'
-    },
-    'China': {
-        'base_url': 'https://servicedeskplus.cn',
-        'oauth': 'https://accounts.zoho.com.cn/oauth/v2/token'
-    },
-    'Australia': {
-        'base_url': 'https://servicedeskplus.net.au',
-        'oauth': 'https://accounts.zoho.com.au/oauth/v2/token'
-    },
-    'Japan': {
-        'base_url': 'https://servicedeskplus.jp',
-        'oauth': 'https://accounts.zoho.com.jp/oauth/v2/token'
-    },
-    'Canada': {
-        'base_url': 'https://servicedeskplus.ca',
-        'oauth': 'https://accounts.zoho.ca/oauth/v2/token'
-    },
-    'United Kingdom': {
-        'base_url': 'https://servicedeskplus.uk',
-        'oauth': 'https://accounts.zoho.uk/oauth/v2/token'
-    }
+    "United States": {"base_url": "https://sdpondemand.manageengine.com", "oauth": "https://accounts.zoho.com/oauth/v2/token"},
+    "Europe": {"base_url": "https://sdpondemand.manageengine.eu", "oauth": "https://accounts.zoho.eu/oauth/v2/token"},
+    "India": {"base_url": "https://sdpondemand.manageengine.in", "oauth": "https://accounts.zoho.in/oauth/v2/token"},
+    "China": {"base_url": "https://servicedeskplus.cn", "oauth": "https://accounts.zoho.com.cn/oauth/v2/token"},
+    "Australia": {"base_url": "https://servicedeskplus.net.au", "oauth": "https://accounts.zoho.com.au/oauth/v2/token"},
+    "Japan": {"base_url": "https://servicedeskplus.jp", "oauth": "https://accounts.zoho.com.jp/oauth/v2/token"},
+    "Canada": {"base_url": "https://servicedeskplus.ca", "oauth": "https://accounts.zoho.ca/oauth/v2/token"},
+    "United Kingdom": {"base_url": "https://servicedeskplus.uk", "oauth": "https://accounts.zoho.uk/oauth/v2/token"},
 }
 
-REQUEST_FIELDS = ['subject', 'description', 'request_type', 'impact', 'status', 'mode', 'level', 'urgency', 'priority',
-                  'service_category', 'requester', 'assets', 'site', 'group', 'technician', 'category', 'subcategory',
-                  'item', 'email_ids_to_notify', 'is_fcr', 'resources', 'udf_fields', 'update_reason']
+REQUEST_FIELDS = [
+    "subject",
+    "description",
+    "request_type",
+    "impact",
+    "status",
+    "mode",
+    "level",
+    "urgency",
+    "priority",
+    "service_category",
+    "requester",
+    "assets",
+    "site",
+    "group",
+    "technician",
+    "category",
+    "subcategory",
+    "item",
+    "email_ids_to_notify",
+    "is_fcr",
+    "resources",
+    "udf_fields",
+    "update_reason",
+]
 
-FIELDS_WITH_NAME = ['request_type', 'impact', 'status', 'mode', 'level', 'urgency', 'priority', 'service_category',
-                    'requester', 'site', 'group', 'technician', 'category', 'subcategory', 'item']
+FIELDS_WITH_NAME = [
+    "request_type",
+    "impact",
+    "status",
+    "mode",
+    "level",
+    "urgency",
+    "priority",
+    "service_category",
+    "requester",
+    "site",
+    "group",
+    "technician",
+    "category",
+    "subcategory",
+    "item",
+]
 
 API_GET_REQUESTS = "/api/v3/requests"
-API_DELETE_ENDPOINT = { "onprem": "/move_to_trash", "cloud": "" }
-API_ASSIGN_ENDPOINT = { "onprem": "assign", "cloud": "_assign" }
-API_CLOSE_ENDPOINT = { "onprem": "close", "cloud": "_close" }
+API_DELETE_ENDPOINT = {"onprem": "/move_to_trash", "cloud": ""}
+API_ASSIGN_ENDPOINT = {"onprem": "assign", "cloud": "_assign"}
+API_CLOSE_ENDPOINT = {"onprem": "close", "cloud": "_close"}
 
 # Constants relating to 'get_error_message_from_exception'
 ERR_MSG_UNAVAILABLE = "Error message unavailable. Please check the asset configuration and|or action parameters."
