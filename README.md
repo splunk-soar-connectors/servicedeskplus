@@ -1,10 +1,10 @@
 # ServiceDeskPlus
 
-Publisher: Splunk Inc. \
-Connector Version: 1.0.1 \
-Product Vendor: ManageEngine \
-Product Name: ServiceDeskPlus \
-Minimum Product Version: 6.1.1
+Publisher: Splunk Inc. <br>
+Connector Version: 1.0.1 <br>
+Product Vendor: ManageEngine <br>
+Product Name: ServiceDeskPlus <br>
+Minimum Product Version: 6.3.0
 
 This App supports a variety of ticket management actions on ManageEngine ServiceDesk Plus
 
@@ -61,23 +61,23 @@ VARIABLE | REQUIRED | TYPE | DESCRIPTION
 
 ### Supported Actions
 
-[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration \
-[on poll](#action-on-poll) - Ingest tickets from ServiceDeskPlus \
-[delete ticket](#action-delete-ticket) - Delete ticket (request) \
-[create ticket](#action-create-ticket) - Create a ticket (request) \
-[update ticket](#action-update-ticket) - Update ticket (request) \
-[get ticket resolution](#action-get-ticket-resolution) - Get a resolution of the ticket (request) \
-[set ticket resolution](#action-set-ticket-resolution) - Add/Update a resolution of the ticket (request) \
-[list linked tickets](#action-list-linked-tickets) - Get all linked tickets under a ticket (request) \
-[assign ticket](#action-assign-ticket) - Assign a ticket (request) \
-[close ticket](#action-close-ticket) - Close a ticket (request) \
+[test connectivity](#action-test-connectivity) - Validate the asset configuration for connectivity using supplied configuration <br>
+[on poll](#action-on-poll) - Ingest tickets from ServiceDeskPlus <br>
+[delete ticket](#action-delete-ticket) - Delete ticket (request) <br>
+[create ticket](#action-create-ticket) - Create a ticket (request) <br>
+[update ticket](#action-update-ticket) - Update ticket (request) <br>
+[get ticket resolution](#action-get-ticket-resolution) - Get a resolution of the ticket (request) <br>
+[set ticket resolution](#action-set-ticket-resolution) - Add/Update a resolution of the ticket (request) <br>
+[list linked tickets](#action-list-linked-tickets) - Get all linked tickets under a ticket (request) <br>
+[assign ticket](#action-assign-ticket) - Assign a ticket (request) <br>
+[close ticket](#action-close-ticket) - Close a ticket (request) <br>
 [list tickets](#action-list-tickets) - List tickets present in ServiceDesk Plus
 
 ## action: 'test connectivity'
 
 Validate the asset configuration for connectivity using supplied configuration
 
-Type: **test** \
+Type: **test** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -92,7 +92,7 @@ No Output
 
 Ingest tickets from ServiceDeskPlus
 
-Type: **ingest** \
+Type: **ingest** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -113,7 +113,7 @@ No Output
 
 Delete ticket (request)
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -139,7 +139,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Create a ticket (request)
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -165,7 +165,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Update ticket (request)
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -196,7 +196,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Get a resolution of the ticket (request)
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -228,7 +228,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Add/Update a resolution of the ticket (request)
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -258,7 +258,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Get all linked tickets under a ticket (request)
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -286,7 +286,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Assign a ticket (request)
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -314,7 +314,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 Close a ticket (request)
 
-Type: **generic** \
+Type: **generic** <br>
 Read only: **False**
 
 #### Action Parameters
@@ -348,7 +348,7 @@ summary.total_objects_successful | numeric | | 1 |
 
 List tickets present in ServiceDesk Plus
 
-Type: **investigate** \
+Type: **investigate** <br>
 Read only: **True**
 
 #### Action Parameters
@@ -389,7 +389,7 @@ ______________________________________________________________________
 
 Auto-generated Splunk SOAR Connector documentation.
 
-Copyright 2025 Splunk Inc.
+Copyright 2026 Splunk Inc.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
