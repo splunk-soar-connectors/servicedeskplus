@@ -11,16 +11,19 @@
     "fips_compliant": false,
     "product_version_regex": ".*",
     "publisher": "Splunk Inc.",
-    "license": "Copyright (c) Splunk Inc., 2024-2025",
+    "license": "Copyright (c) Splunk Inc., 2024-2026",
     "app_version": "1.0.1",
     "utctime_updated": "2024-01-25T10:00:07.352934Z",
     "package_name": "phantom_servicedeskplus",
     "main_module": "servicedeskplus_connector.py",
-    "min_phantom_version": "6.1.1",
+    "min_phantom_version": "6.3.0",
     "app_wizard_version": "1.0.0",
     "contributors": [
         {
             "name": "Erica Pescio"
+        },
+        {
+            "name": "Diogo Silva"
         }
     ],
     "configuration": {
@@ -1041,5 +1044,11 @@
             },
             "versions": "EQ(*)"
         }
-    ]
+    ],
+    "pip313_dependencies": {
+        "wheel": []
+    },
+    "pip39_dependencies": {
+        "wheel": []
+    }
 }

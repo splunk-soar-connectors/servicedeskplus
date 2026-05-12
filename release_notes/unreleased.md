@@ -1,1 +1,3 @@
 **Unreleased**
+
+* Updated REQUEST_FIELDS in servicedeskplus_const.py to include the "template" field.
